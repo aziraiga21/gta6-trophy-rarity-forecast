@@ -161,6 +161,25 @@ class ForecastTests(unittest.TestCase):
                 print(f"seed {seed}: model {loss:.6f}, persistence {baseline:.6f}, {elapsed:.3f}s")
                 self.assertLess(loss, baseline)
 
+    def test_zero_last_rate_keeps_positive_saturating_forecast(self):
+        case = {
+            "trophies": [{"id": 1}],
+            "at": stamp(59.67),
+            "target": stamp(168.17),
+            "horizon_minutes": 6510,
+            "history": [
+                {"slot": stamp(hour), "rates": [rate]}
+                for hour, rate in [(0, 1), (24, 2), (48, 0)]
+            ],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "zero.in").write_text(json.dumps(case), encoding="utf-8")
+            output_dir = root / "out"
+            run_forecaster(root, output_dir)
+            values = self.valid_output((output_dir / "zero.out").read_bytes(), [1])[1]
+            self.assertGreater(values[2], 0.02)
+
     def test_missing_rates_and_empty_history(self):
         cases = {
             "empty": ({"trophies": [{"id": 1}]}, {1: 1}),

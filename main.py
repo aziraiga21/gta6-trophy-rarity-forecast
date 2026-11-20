@@ -98,9 +98,10 @@ def fit_line(points):
     return y_mean - slope * x_mean, slope
 
 
-def saturating_fit(observations, last_rate, target):
+def saturating_fit(observations, last_positive_rate, target):
     best = None
-    for asymptote in (*[min(99.5, last_rate * m) for m in ASYMPTOTE_MULTIPLIERS], 99.5):
+    candidates = [min(99.5, last_positive_rate * m) for m in ASYMPTOTE_MULTIPLIERS]
+    for asymptote in (*candidates, 99.5):
         points = [
             (log_hour(hour), math.log(asymptote / rate - 1))
             for hour, rate in observations if rate < asymptote
@@ -117,7 +118,7 @@ def saturating_fit(observations, last_rate, target):
         if best is None or residual < best[1]:
             prediction = asymptote * inv_logit(-(intercept + slope * target)) / 100
             best = prediction, residual
-    return best if best is not None else (last_rate, 0.5)
+    return best if best is not None else (last_positive_rate, 0.5)
 
 
 def local_trend(observations, last_rate, checkpoint, target):
@@ -125,6 +126,8 @@ def local_trend(observations, last_rate, checkpoint, target):
         (log_hour(hour), logit(rate))
         for hour, rate in observations if checkpoint - hour <= 24
     ]
+    if len(points) < 3:
+        points = [(log_hour(hour), logit(rate)) for hour, rate in observations]
     fit = fit_line(points)
     if fit is None:
         return last_rate
@@ -196,7 +199,10 @@ def forecast(case):
                     (hour, rate) for (hour, _, _), rate in zip(states, rates)
                     if hour is not None and rate is not None and rate > 0
                 ]
-                saturated, residual = saturating_fit(observations, last_rate, target)
+                last_positive_rate = next(
+                    rate for rate in reversed(rates) if rate is not None and rate > 0
+                )
+                saturated, residual = saturating_fit(observations, last_positive_rate, target)
                 linear = local_trend(observations, last_rate, checkpoint, target)
                 persistence = last_rate or 0.02
                 center = 0.5 * logit(saturated) + 0.3 * logit(linear) + 0.2 * logit(persistence)

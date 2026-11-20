@@ -18,12 +18,12 @@ python3 -m unittest discover -s tests -v
 
 ## Validation
 
-All three tests passed on the local Python 3.12.3 interpreter. Each practice output had 55 valid rows and was 2,757 bytes. Both cases produced byte-identical outputs across reruns, and all 54 non-pinned medians were below their last observed rates in each case.
+All four tests passed on the local Python 3.12.3 interpreter. Each practice output had 55 valid rows and was 2,757 bytes. Both cases produced byte-identical outputs across reruns, and all 54 non-pinned medians were below their last observed rates in each case.
 
 | Practice case | First run | Second run |
 | --- | ---: | ---: |
-| p00 | 0.286 s | 0.195 s |
-| p01 | 0.622 s | 0.215 s |
+| p00 | 0.055 s | 0.056 s |
+| p01 | 0.050 s | 0.052 s |
 
 The supplied kit contains the practice inputs. The practice answer rates were unavailable for local pinball scoring. The scores below use seeded synthetic final-like histories with stale reads between refreshes and the house persistence spread.
 
